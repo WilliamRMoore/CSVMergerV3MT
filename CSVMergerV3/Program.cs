@@ -1,4 +1,5 @@
-﻿using CSVMergerV3.Application.Services.Validation;
+﻿using CSVMergerV3.Application.Services.HelperServices;
+using CSVMergerV3.Application.Services.Validation;
 using CSVMergerV3.Application.State;
 using CSVMergerV3.UI;
 using Microsoft.Extensions.Configuration;
@@ -32,6 +33,10 @@ namespace CSVMergerV3
                     services.AddTransient<ITUIRoutine, TUIRoutine>();
                     services.AddSingleton<IDataSetNameValidator, DataSetNameValidator>();
                     services.AddSingleton<IConfigurationState, ConfiguationState>();
+                    services.AddScoped<IDirectoryValidator, DirectoryValidator>();
+                    services.AddScoped<IFileValidator, FileValidator>();
+                    services.AddScoped<IFileStreamProvider, FileStreamProvider>();
+                    services.AddScoped<IRuleChecker, RuleChecker>();
                 })
                 .UseSerilog()
                 .Build();
