@@ -13,14 +13,16 @@ namespace CSVMergerV3.Application.FileProcessor
         private InputDataSet _dataset;
         private IConfigurationState _configurationState;
         private readonly IFileStreamProvider _fileStreamProvider;
+        private readonly IPercentageCalculator _percentageCalculator;
         private int OutputColumnCount;
         private string[] OuputColumns;
         private string OuputPath;
 
-        public FileProcessor(IConfigurationState configurationState, IFileStreamProvider fileStreamProvider)
+        public FileProcessor(IConfigurationState configurationState, IFileStreamProvider fileStreamProvider, IPercentageCalculator percentageCalculator)
         {
             _configurationState = configurationState;
             _fileStreamProvider = fileStreamProvider;
+            _percentageCalculator = percentageCalculator;
         }
 
         public void processConfig(string[] outputColumns, int outputColumnCount, InputDataSet dataSet, string outputPath)
@@ -82,6 +84,7 @@ namespace CSVMergerV3.Application.FileProcessor
                     {
                         var line = _dataset.ProcessedLines.Take();
                         writeStream.WriteLine(line);
+                        _percentageCalculator.IncrementProcessedLines();
                     }
                 }
                 catch

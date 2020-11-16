@@ -12,7 +12,7 @@ namespace CSVMergerV3.Application.State
     class NewJobState : IJobState
     {
         private long TotalLinesToPreccess = 0;
-        private long ProccessedLines = 0;
+        //private long ProccessedLines = 0;
         private string OutputPath;
         private string OutputSetName;
         private string[] OutputColumns;
@@ -22,13 +22,15 @@ namespace CSVMergerV3.Application.State
         private readonly IFileStreamProvider _fileStreamProvider;
         private readonly IFileLineCounter _fileLineCounter;
         private readonly IFileProcessor _fileProcessor;
+        private readonly IPercentageCalculator _percentageCalculator;
 
-        public NewJobState(IOutputDatasetFactory outputDatasetFactory, IFileStreamProvider fileStreamProvider, IFileLineCounter fileLineCounter, IFileProcessor fileProcessor)
+        public NewJobState(IOutputDatasetFactory outputDatasetFactory, IFileStreamProvider fileStreamProvider, IFileLineCounter fileLineCounter, IFileProcessor fileProcessor, IPercentageCalculator percentageCalculator)
         {
             _outputDatasetFactory = outputDatasetFactory;
             _fileStreamProvider = fileStreamProvider;
             _fileLineCounter = fileLineCounter;
             _fileProcessor = fileProcessor;
+            _percentageCalculator = percentageCalculator;
         }
 
         public void SetOutputSetName(string fileName)
@@ -90,6 +92,7 @@ namespace CSVMergerV3.Application.State
 
         public void ExecuteJob()
         {
+            _percentageCalculator.DisplayPercent(TotalLinesToPreccess);
             var writeStream = _fileStreamProvider.GetWriteStream(OutputPath);
             using (writeStream)
             {
@@ -100,6 +103,8 @@ namespace CSVMergerV3.Application.State
             {
                 _fileProcessor.processConfig(OutputColumns, OutputColumnCount, inputSet, OutputPath);
             }
+
+            _percentageCalculator.Stop();
         }
     }
 }

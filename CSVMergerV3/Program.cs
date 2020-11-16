@@ -48,6 +48,7 @@ namespace CSVMergerV3
                     services.AddScoped<IOutputDatasetFactory, OutputDatasetFactory>();
                     services.AddScoped<IInputDatasetFactory, InputDatasetFactory>();
                     services.AddScoped<IFileProcessor, FileProcessor>();
+                    services.AddSingleton<IPercentageCalculator, PercentageCalculator>();
                 })
                 .UseSerilog()
                 .Build();

@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Transactions;
 
 namespace CSVMergerV3.UI
@@ -358,7 +359,9 @@ namespace CSVMergerV3.UI
         {
             _log.LogInformation("Job is now starting");
             _lineProducerConsumerOrechestrator.Run();
+            Thread.Sleep(350);
             _log.LogInformation("Jobe Complete!");
+            _log.LogInformation("Press enter to exit.");
             Console.ReadLine();
         }
     }
