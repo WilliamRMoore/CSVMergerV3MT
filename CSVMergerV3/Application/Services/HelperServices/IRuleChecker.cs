@@ -4,6 +4,6 @@ namespace CSVMergerV3.Application.Services.HelperServices
 {
     public interface IRuleChecker
     {
-        bool DoesRuleExist(Dataset dataSet, int targetIndex);
+        bool DoesRuleExist(InputDataSet dataSet, int targetIndex);
     }
 }

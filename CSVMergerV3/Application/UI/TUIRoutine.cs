@@ -1,5 +1,7 @@
 ﻿using CSVMergerV3.Application.Domain;
+using CSVMergerV3.Application.Factories;
 using CSVMergerV3.Application.Services.HelperServices;
+using CSVMergerV3.Application.Services.Orchestrators;
 using CSVMergerV3.Application.Services.Validation;
 using CSVMergerV3.Application.State;
 using Microsoft.Extensions.Configuration;
@@ -8,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Transactions;
 
 namespace CSVMergerV3.UI
 {
@@ -20,9 +23,15 @@ namespace CSVMergerV3.UI
         private readonly IDirectoryValidator _directoryValidator;
         private readonly IFileValidator _fileValidator;
         private readonly IRuleChecker _ruleChecker;
+        private readonly IFileLineCounter _fileLineCounter;
+        private readonly IJobState _jobState;
+        private readonly ILineProducerConsumerOrechestrator _lineProducerConsumerOrechestrator;
+        private readonly IOutputDatasetFactory _outputDatasetFactory;
+        private readonly IInputDatasetFactory _inputDatasetFactory;
 
         public TUIRoutine(ILogger<TUIRoutine> log, IConfiguration config, IDataSetNameValidator dataSetNameValidator, IConfigurationState configurationState,
-            IDirectoryValidator directoryValidator, IFileValidator fileValidator, IRuleChecker ruleChecker)
+            IDirectoryValidator directoryValidator, IFileValidator fileValidator, IRuleChecker ruleChecker, IFileLineCounter fileLineCounter, IJobState jobState,
+            ILineProducerConsumerOrechestrator lineProducerConsumerOrechestrator, IOutputDatasetFactory outputDatasetFactory, IInputDatasetFactory inputDatasetFactory)
         {
             _log = log;
             _config = config;
@@ -31,6 +40,11 @@ namespace CSVMergerV3.UI
             _directoryValidator = directoryValidator;
             _fileValidator = fileValidator;
             _ruleChecker = ruleChecker;
+            _fileLineCounter = fileLineCounter;
+            _jobState = jobState;
+            _lineProducerConsumerOrechestrator = lineProducerConsumerOrechestrator;
+            _outputDatasetFactory = outputDatasetFactory;
+            _inputDatasetFactory = inputDatasetFactory;
         }
 
         public void Run()
@@ -38,9 +52,19 @@ namespace CSVMergerV3.UI
             Welcome();
             GetNewDatasetName();
             SetColumnNamesFromUser();
+            Console.Clear();
             AskForTargetDirectory();
+            Console.Clear();
             AskForMergeFiles();
+            Console.Clear();
             MapDatasetRules();
+            Console.Clear();
+            AskForThreadCount();
+            Console.Clear();
+            AskUserForConfirmation();
+            Console.Clear();
+            SetUp();
+            StartJob();
         }
 
         private void Welcome()
@@ -68,7 +92,7 @@ namespace CSVMergerV3.UI
 
                 if (valid)
                 {
-                    _configurationState.setOutputSetName(newDataSetName);
+                    _jobState.SetOutputSetName(newDataSetName);
                     break;
                 }
                 else
@@ -86,7 +110,7 @@ namespace CSVMergerV3.UI
             var columnNames = Console.ReadLine();
             var columnArr = columnNames.Split(",");
 
-            _configurationState.setOutputSetColumns(columnArr);
+            _jobState.SetOutputSetColumns(columnArr);
         }
 
         private void AskForTargetDirectory()
@@ -106,21 +130,21 @@ namespace CSVMergerV3.UI
                 }
                 else
                 {
-                    _configurationState.setOutputPath(outputPath);
+                    _jobState.SetOutputPath(outputPath);
                     break;
                 }
 
             } while (true);
-           
+
         }
 
         private void AskForMergeFiles()
         {
-
             _log.LogInformation("Please input path for the CSV files you wish to merge. One at a time.");
 
             do
             {
+                _log.LogInformation("Please input Filepath.");
 
                 var inputFile = Console.ReadLine();
 
@@ -134,16 +158,10 @@ namespace CSVMergerV3.UI
                 }
 
                 //make the new Dataset object and add it to the inputsets list on the configurationstate object.
-                var ds = new Dataset();
+                var ds = _inputDatasetFactory.MakeInputDataset();
                 ds.FilePath = inputFile;
-                _configurationState.AddInputset(ds);
+                _jobState.AddInputset(ds);
 
-                break;
-
-            } while (true);
-
-            do
-            {
                 _log.LogInformation("Would you like to add another file? [Y,N]");
 
                 var yesNo = Console.ReadLine().ToUpper();
@@ -152,24 +170,21 @@ namespace CSVMergerV3.UI
                 {
                     _log.LogInformation("Please input a Y or N");
                 }
-                else if (yesNo == "Y")
-                {
-                    AskForMergeFiles();
-                }
-                else
+                else if (yesNo != "Y")
                 {
                     break;
                 }
+
             } while (true);
         }
 
-        private void MapDatasetRules()
+        private void MapDatasetRules()//this method is terrible. Doesn't matter, all of this is getting replaced, anyway.
         {
-            Console.Clear();
+           // Console.Clear();
 
-            var inputSets = _configurationState.GetinputSets();
-            var outputColumns = _configurationState.GetOutputColumns();
-            var outputsetName = _configurationState.GetOutputsetName();
+            var inputSets = _jobState.GetinputSets();
+            var outputColumns = _jobState.GetOutputColumns();
+            var outputsetName = _jobState.GetOutputsetName();
 
             for (int i = 0; i < inputSets.Count; i++)//loop through inputsets
             {
@@ -177,28 +192,24 @@ namespace CSVMergerV3.UI
 
                 for (int j = 0; j < inputset.Columns.Length; j++)//loop through inputset columns
                 {
-                    var inputsetColumn = inputset.Columns[j];
 
                     for (int k = 0; k < outputColumns.Length; k++)//loop through output columns
                     {
-                        var outputColumn = outputColumns[k];
-
-                        if (_ruleChecker.DoesRuleExist(inputset, k))//if a rule for the output (k) index exists, skip.
-                        {
-                            continue;
-                        }
-                        else
-                        {
-                            _log.LogInformation("\n");
-                            _log.LogInformation($"Map [{inputset.DatasetName}] column \"{inputset.Columns[j]}\" to --> [{outputsetName}] column \"{outputColumns[k]}\"");
-                            _log.LogInformation("\n");
-                            _log.LogInformation("Yes, No, skip, or back [Y,N,S,B]");
-                        }
-
-                        var YNSB = Console.ReadLine().ToUpper();
+                        var YNSB = "";
 
                         do
                         {
+                            if (_ruleChecker.DoesRuleExist(inputset, k))//if a rule for the output (k) index exists, skip.
+                            {
+                                break;
+                            }
+
+                            _log.LogInformation("Map [{DatasetName}] column \"{inputsetColumns}\" to --> [{outputsetName}] column \"{outputColumns}\"\n",inputset.DatasetName, inputset.Columns[j], outputsetName, outputColumns[k]);
+
+                            _log.LogInformation("Yes, No, skip, or back [Y,N,S,B]");
+
+                            YNSB = Console.ReadLine().ToUpper();
+
                             if (YNSB.Equals("Y"))//if yes, make the maprule
                             {
                                 var rule = new MapRule
@@ -210,26 +221,41 @@ namespace CSVMergerV3.UI
                                 inputset.MapRules.Add(rule);
 
                                 j++;
-                                
-                                break;
                             }
 
-                            else if (YNSB.Equals("N"))
+                            else if (YNSB.Equals("N"))//break do while loop, K gets incrimented
                             {
-                                break;
-                            }
 
-                            else if (YNSB.Equals("S"))
-                            {
-                                j++;
-                                k--;
                                 break;
-                            }
 
-                            else if (YNSB.Equals("B"))
+                            }
+                            else if (YNSB.Equals("S"))//Incriment J, unless J is at the last index, in whicn case, break the loop.
                             {
-                                k--;
-                                break;
+
+                                if(j == inputset.Columns.Length - 1)
+                                {
+                                    break;
+                                }
+                                else
+                                {
+                                    j++;
+                                }
+
+                            }
+                            else if (YNSB.Equals("B"))//this doesn't work properly yet
+                            {
+
+                                if (k > 0)
+                                {
+
+                                    k--;//Need to remove a rule is the previous input generated one. Come back to this. Maybe use a queue and then convert to list once all rules are created.
+
+                                }
+                                else
+                                {
+                                    _log.LogInformation("Can not go back any further.");
+                                }
+
                             }
                             else
                             {
@@ -245,6 +271,95 @@ namespace CSVMergerV3.UI
                     }
                 }
             }
+        }
+
+        private void AskForThreadCount()
+        {
+            _log.LogInformation("This application will use a minimum of 3 threads, would you like to dedicate more? (Note: Order can not be gaurenteed beyond 3 threads) [Y/N]?");
+
+            while (true)
+            {
+                var yn = Console.ReadLine().ToUpper();
+
+                if(!yn.Equals("Y") && !yn.Equals("N"))
+                {
+                    _log.LogInformation("Invalid Input");
+                    continue;
+                }
+                else if (yn.Equals("Y"))
+                {
+                    UserThreadCount();
+                    break;
+                }
+
+                break;
+            }
+        }
+
+        private void UserThreadCount()
+        {
+
+            while (true)
+            {
+               
+                var threadInt = 3;
+
+                _log.LogInformation("Please Input the Number of Threads. Must be Greater than {minimumThreadCount} and equal to or less than {systemThreadCount}", 3, _configurationState.GetCPUCount());
+                var input = Console.ReadLine();
+                bool success = int.TryParse(input, out threadInt);
+
+                if (!success)
+                {
+                    _log.LogInformation("Invalid Input");
+                    continue;
+                }
+                else if(threadInt < 3 || threadInt > _configurationState.GetCPUCount())
+                {
+                    _log.LogInformation("Please select a number no less than {minimumThreadCount} and no Greater than {systemThreadCount}", 3, _configurationState.GetCPUCount());
+                    continue;
+                }
+
+                _configurationState.SetAppThreadCount(threadInt);
+                break;
+            }
+        }
+        private void AskUserForConfirmation()
+        {
+            //Console.Clear();
+
+            var outputColumns = _jobState.GetOutputColumns();
+            var inputSets = _jobState.GetinputSets();
+            _log.LogInformation("A file with name {filename} will be created in Directoy {targetDirectory}.\n", _jobState.GetOutputsetName(), _jobState.GetOutputDirectory());
+            
+            foreach(var set in inputSets)
+            {
+                _log.LogInformation("Input set {inputsetName} will map to {targetDirectory} by rules of...\n", set.DatasetName, _jobState.GetOutputsetName());
+
+                foreach(var rule in set.MapRules)
+                {
+                    _log.LogInformation("Input set Name [{inputSetName}] Column {columnName} --> Output set Name [{outputsetName}] Column {outColumnName}", set.DatasetName, set.Columns[rule.OriginIndex], _jobState.GetOutputsetName(), outputColumns[rule.TargetIndex]);
+                }
+            }
+
+            _log.LogInformation("Confirm? [Y/N]");
+
+            var confirm = Console.ReadLine().ToUpper();
+        }
+
+        private void SetUp()
+        {
+            _log.LogInformation("Preparing Job please wait...");
+            _jobState.SetTotalLines();
+            _log.LogInformation("A job to create a new file with {LineCount} lines has been created.", _jobState.GetTotalLines());
+            _log.LogInformation("Press any key to execute job.");
+            Console.ReadLine();
+        }
+        private void StartJob()
+        {
+            _log.LogInformation("Job is now starting");
+            _lineProducerConsumerOrechestrator.Run();
+            _log.LogInformation("Jobe Complete!");
+            Console.ReadLine();
         }
     }
 }

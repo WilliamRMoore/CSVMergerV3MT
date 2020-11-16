@@ -1,4 +1,8 @@
-﻿using CSVMergerV3.Application.Services.HelperServices;
+﻿using CSVMergerV3.Application.Factories;
+using CSVMergerV3.Application.FileProcessor;
+using CSVMergerV3.Application.Services.HelperServices;
+using CSVMergerV3.Application.Services.LineProducers;
+using CSVMergerV3.Application.Services.Orchestrators;
 using CSVMergerV3.Application.Services.Validation;
 using CSVMergerV3.Application.State;
 using CSVMergerV3.UI;
@@ -35,8 +39,15 @@ namespace CSVMergerV3
                     services.AddSingleton<IConfigurationState, ConfiguationState>();
                     services.AddScoped<IDirectoryValidator, DirectoryValidator>();
                     services.AddScoped<IFileValidator, FileValidator>();
-                    services.AddScoped<IFileStreamProvider, FileStreamProvider>();
+                    services.AddTransient<IFileStreamProvider, FileStreamProvider>();
                     services.AddScoped<IRuleChecker, RuleChecker>();
+                    services.AddSingleton<IJobState, NewJobState>();
+                    services.AddScoped<IFileLineCounter, FileLineCounter>();
+                    services.AddScoped<ILineReader, LineReader>();
+                    services.AddScoped<ILineProducerConsumerOrechestrator, LineProducerConsumerOrechestrator>();
+                    services.AddScoped<IOutputDatasetFactory, OutputDatasetFactory>();
+                    services.AddScoped<IInputDatasetFactory, InputDatasetFactory>();
+                    services.AddScoped<IFileProcessor, FileProcessor>();
                 })
                 .UseSerilog()
                 .Build();

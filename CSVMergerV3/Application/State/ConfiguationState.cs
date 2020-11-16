@@ -4,56 +4,84 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace CSVMergerV3.Application.State
 {
     public class ConfiguationState : IConfigurationState
     {
-        private Dataset OutputSet = new Dataset();
-        private List<Dataset> InputSets = new List<Dataset>();
-        private readonly IFileStreamProvider _fileStreamProvider;
+        //private Dataset OutputSet = new Dataset();
+        //private List<Dataset> InputSets = new List<Dataset>();
+       // private readonly IFileStreamProvider _fileStreamProvider;
+        private int ProccessorCount = Environment.ProcessorCount;
+        private int AppThreadCount = 3;
+        private static Regex CSVParser = new Regex(",(?=(?:[^\"]*\"[^\"]*\")*(?![^\"]*\"))");
 
-        public ConfiguationState(IFileStreamProvider fileStreamProvider)
+        public ConfiguationState()
         {
-            _fileStreamProvider = fileStreamProvider;
+            //_fileStreamProvider = fileStreamProvider;
         }
 
-        public void setOutputSetName(string name)
-        {
-            OutputSet.DatasetName = name;
-        }
+        //public void setOutputSetName(string name)
+        //{
+        //    OutputSet.DatasetName = name + ".csv";
+        //}
 
-        public void setOutputSetColumns(string[] columns)
-        {
-            OutputSet.Columns = columns;
-        }
+        //public void setOutputSetColumns(string[] columns)
+        //{
+        //    OutputSet.Columns = columns;
+        //}
 
-        public void setOutputPath(string path)
-        {
-            OutputSet.FilePath = path;
-        }
+        //public void setOutputPath(string path)
+        //{
+        //    OutputSet.FilePath = path + "\\" + OutputSet.DatasetName;
+        //}
 
-        public void AddInputset(Dataset dataset)
-        {
-            //get the columns from inputset
-            var fileStream = _fileStreamProvider.GetReadStream(dataset.FilePath);
-            dataset.Columns = fileStream.ReadLine().Split(",");//get our column names
-            dataset.DatasetName = Path.GetFileName(dataset.FilePath);
-            InputSets.Add(dataset);
-        }
+        //public void AddInputset(Dataset dataset)
+        //{
+        //    //get the columns from inputset
+        //    var fileStream = _fileStreamProvider.GetReadStream(dataset.FilePath);
+        //    using (fileStream)
+        //    {
+        //        dataset.Columns = fileStream.ReadLine().Split(",");//get our column names
+        //        dataset.DatasetName = Path.GetFileName(dataset.FilePath);
+        //        InputSets.Add(dataset);
+        //    }
+        //}
         
-        public List<Dataset> GetinputSets()
+        //public List<Dataset> GetinputSets()
+        //{
+        //    return InputSets;
+        //}
+        //public string[] GetOutputColumns()
+        //{
+        //    return OutputSet.Columns;
+        //}
+
+        //public string GetOutputsetName()
+        //{
+        //    return OutputSet.DatasetName;
+        //}
+        //public string GetOutputDirectory()
+        //{
+        //    return OutputSet.FilePath;
+        //}
+        public int GetCPUCount()
         {
-            return InputSets;
+            return ProccessorCount;
         }
-        public string[] GetOutputColumns()
+        public void SetAppThreadCount(int threads)
         {
-            return OutputSet.Columns;
+            AppThreadCount = threads;
+        }
+        public int GetAppThreadCount()
+        {
+            return AppThreadCount;
         }
 
-        public string GetOutputsetName()
+        public Regex GetRegex()
         {
-            return OutputSet.DatasetName;
+            return CSVParser;
         }
     }
 }

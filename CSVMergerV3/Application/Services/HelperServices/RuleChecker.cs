@@ -9,7 +9,7 @@ namespace CSVMergerV3.Application.Services.HelperServices
 {
     public class RuleChecker : IRuleChecker
     {
-        public bool DoesRuleExist(Dataset dataSet, int targetIndex)
+        public bool DoesRuleExist(InputDataSet dataSet, int targetIndex)
         {
             return dataSet.MapRules.Any(r => r.TargetIndex == targetIndex);
         }

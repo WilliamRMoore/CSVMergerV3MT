@@ -18,7 +18,14 @@ namespace CSVMergerV3.Application.Services.HelperServices
 
         public StreamWriter GetWriteStream(string filePath)
         {
-            return new StreamWriter(filePath);
+            if (!File.Exists(filePath))
+            {
+                return new StreamWriter(filePath);
+            }
+            else
+            {
+                return File.AppendText(filePath);
+            }
         }
 
         public bool IsFilePathValid(string filePath)
