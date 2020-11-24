@@ -17,7 +17,7 @@ namespace CSVMergerV3.Application.Factories
 
         public InputDataSet MakeInputDataset()
         {
-            return new InputDataSet(_fileStreamProvider);
+            return new InputDataSet();
         }
     }
 }

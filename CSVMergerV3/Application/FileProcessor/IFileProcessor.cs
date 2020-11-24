@@ -4,6 +4,6 @@ namespace CSVMergerV3.Application.FileProcessor
 {
     public interface IFileProcessor
     {
-        void processConfig(string[] outputColumns, int outputColumnCount, InputDataSet dataSet, string outputPath);
+        void processConfig(/*string[] outputColumns,*/ int outputColumnCount, InputDataSet dataSet, string outputPath);
     }
 }

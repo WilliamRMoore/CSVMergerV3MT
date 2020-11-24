@@ -1,54 +1,57 @@
 ﻿using CSVMergerV3.Application.Domain;
 using CSVMergerV3.Application.Factories;
+using CSVMergerV3.Application.FileProcessor;
 using CSVMergerV3.Application.Services.HelperServices;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
 namespace CSVMergerV3.Application.State
 {
-    public class JobState : IJobState
+    class JobState : IJobState
     {
         private long TotalLinesToPreccess = 0;
-        private long ProccessedLines = 0;
-        private Dataset OutputSet;
+        private string OutputPath;
+        private string OutputSetName;
+        private string[] OutputColumns;
+        private int OutputColumnCount;
         private List<InputDataSet> InputSets = new List<InputDataSet>();
         private readonly IFileStreamProvider _fileStreamProvider;
-        private readonly IOutputDatasetFactory _outputDatasetFactory;
+        private readonly IFileLineCounter _fileLineCounter;
+        private readonly IFileProcessor _fileProcessor;
+        private readonly IPercentageCalculator _percentageCalculator;
 
-        public JobState(IFileStreamProvider fileStreamProvider, IOutputDatasetFactory outputDatasetFactory)
+        public JobState(IFileStreamProvider fileStreamProvider, IFileLineCounter fileLineCounter, IFileProcessor fileProcessor, IPercentageCalculator percentageCalculator)
         {
             _fileStreamProvider = fileStreamProvider;
-            _outputDatasetFactory = outputDatasetFactory;
-            //_configurationState = configurationState;
-
-            OutputSet = _outputDatasetFactory.MakeOutputDataset();
+            _fileLineCounter = fileLineCounter;
+            _fileProcessor = fileProcessor;
+            _percentageCalculator = percentageCalculator;
         }
 
-        public void SetOutputSetName(string name)
+        public void SetOutputSetName(string fileName)
         {
-            OutputSet.DatasetName = name + ".csv";
+            OutputSetName = fileName + ".csv";
         }
 
         public void SetOutputSetColumns(string[] columns)
         {
-            OutputSet.Columns = columns;
+            OutputColumns = columns;
+            OutputColumnCount = columns.Length;
         }
 
         public void SetOutputPath(string path)
         {
-            OutputSet.FilePath = path + "\\" + OutputSet.DatasetName;
+            OutputPath = path + "\\" + OutputSetName;
         }
 
         public void AddInputset(InputDataSet dataset)
         {
-            //get the columns from inputset
-            var fileStream = _fileStreamProvider.GetReadStream(dataset.FilePath);
+            var fileStream = _fileStreamProvider.GetReadStream(dataset.FilePath);//add the file stream to the data set so it can be accessed in the FileProcessor
             using (fileStream)
             {
-                dataset.Columns = fileStream.ReadLine().Split(",");//get our column names
+                dataset.Columns = fileStream.ReadLine().Split(",");
                 dataset.DatasetName = Path.GetFileName(dataset.FilePath);
                 InputSets.Add(dataset);
             }
@@ -58,23 +61,20 @@ namespace CSVMergerV3.Application.State
         {
             return InputSets;
         }
+
         public string[] GetOutputColumns()
         {
-            return OutputSet.Columns;
+            return OutputColumns;
+        }
+
+        public string GetOutputDirectory()
+        {
+            return OutputPath;
         }
 
         public string GetOutputsetName()
         {
-            return OutputSet.DatasetName;
-        }
-        public string GetOutputDirectory()
-        {
-            return OutputSet.FilePath;
-        }
-
-        public void SetTotalLines(long lineCount)
-        {
-            TotalLinesToPreccess = lineCount;
+            return OutputSetName;
         }
 
         public long GetTotalLines()
@@ -84,12 +84,24 @@ namespace CSVMergerV3.Application.State
 
         public void SetTotalLines()
         {
-            throw new NotImplementedException();
+            TotalLinesToPreccess = _fileLineCounter.RetrieveLineCount(InputSets);
         }
 
         public void ExecuteJob()
         {
-            throw new NotImplementedException();
+            _percentageCalculator.DisplayPercent(TotalLinesToPreccess);
+            var writeStream = _fileStreamProvider.GetWriteStream(OutputPath);
+            using (writeStream)
+            {
+                writeStream.WriteLine(String.Join(",", OutputColumns));
+            }
+
+            foreach (var inputSet in InputSets)
+            {
+                _fileProcessor.processConfig(/*OutputColumns,*/ OutputColumnCount, inputSet, OutputPath);
+            }
+
+            _percentageCalculator.Stop();
         }
     }
 }

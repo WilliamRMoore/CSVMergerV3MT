@@ -25,15 +25,15 @@ namespace CSVMergerV3.UI
         private readonly IDirectoryValidator _directoryValidator;
         private readonly IFileValidator _fileValidator;
         private readonly IRuleChecker _ruleChecker;
-        private readonly IFileLineCounter _fileLineCounter;
+        //private readonly IFileLineCounter _fileLineCounter;
         private readonly IJobState _jobState;
         private readonly ILineProducerConsumerOrechestrator _lineProducerConsumerOrechestrator;
-        private readonly IOutputDatasetFactory _outputDatasetFactory;
+        //private readonly IOutputDatasetFactory _outputDatasetFactory;
         private readonly IInputDatasetFactory _inputDatasetFactory;
 
         public TUIRoutine(ILogger<TUIRoutine> log, IConfiguration config, IDataSetNameValidator dataSetNameValidator, IConfigurationState configurationState,
-            IDirectoryValidator directoryValidator, IFileValidator fileValidator, IRuleChecker ruleChecker, IFileLineCounter fileLineCounter, IJobState jobState,
-            ILineProducerConsumerOrechestrator lineProducerConsumerOrechestrator, IOutputDatasetFactory outputDatasetFactory, IInputDatasetFactory inputDatasetFactory)
+            IDirectoryValidator directoryValidator, IFileValidator fileValidator, IRuleChecker ruleChecker, /*IFileLineCounter fileLineCounter,*/ IJobState jobState,
+            ILineProducerConsumerOrechestrator lineProducerConsumerOrechestrator, /*IOutputDatasetFactory outputDatasetFactory,*/ IInputDatasetFactory inputDatasetFactory)
         {
             _log = log;
             _config = config;
@@ -42,10 +42,10 @@ namespace CSVMergerV3.UI
             _directoryValidator = directoryValidator;
             _fileValidator = fileValidator;
             _ruleChecker = ruleChecker;
-            _fileLineCounter = fileLineCounter;
+            //_fileLineCounter = fileLineCounter;
             _jobState = jobState;
             _lineProducerConsumerOrechestrator = lineProducerConsumerOrechestrator;
-            _outputDatasetFactory = outputDatasetFactory;
+            //_outputDatasetFactory = outputDatasetFactory;
             _inputDatasetFactory = inputDatasetFactory;
         }
 

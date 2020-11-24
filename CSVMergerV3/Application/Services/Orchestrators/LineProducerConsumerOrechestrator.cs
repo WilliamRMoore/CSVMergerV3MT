@@ -1,5 +1,4 @@
-﻿using CSVMergerV3.Application.Services.LineProducers;
-using CSVMergerV3.Application.State;
+﻿using CSVMergerV3.Application.State;
 using System;
 using System.Collections.Generic;
 using System.Text;

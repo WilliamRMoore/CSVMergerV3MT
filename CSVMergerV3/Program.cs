@@ -1,7 +1,6 @@
 ﻿using CSVMergerV3.Application.Factories;
 using CSVMergerV3.Application.FileProcessor;
 using CSVMergerV3.Application.Services.HelperServices;
-using CSVMergerV3.Application.Services.LineProducers;
 using CSVMergerV3.Application.Services.Orchestrators;
 using CSVMergerV3.Application.Services.Validation;
 using CSVMergerV3.Application.State;
@@ -41,11 +40,10 @@ namespace CSVMergerV3
                     services.AddScoped<IFileValidator, FileValidator>();
                     services.AddTransient<IFileStreamProvider, FileStreamProvider>();
                     services.AddScoped<IRuleChecker, RuleChecker>();
-                    services.AddSingleton<IJobState, NewJobState>();
+                    services.AddSingleton<IJobState, JobState>();
                     services.AddScoped<IFileLineCounter, FileLineCounter>();
-                    services.AddScoped<ILineReader, LineReader>();
                     services.AddScoped<ILineProducerConsumerOrechestrator, LineProducerConsumerOrechestrator>();
-                    services.AddScoped<IOutputDatasetFactory, OutputDatasetFactory>();
+                    //services.AddScoped<IOutputDatasetFactory, OutputDatasetFactory>();
                     services.AddScoped<IInputDatasetFactory, InputDatasetFactory>();
                     services.AddScoped<IFileProcessor, FileProcessor>();
                     services.AddSingleton<IPercentageCalculator, PercentageCalculator>();
