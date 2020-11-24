@@ -11,8 +11,8 @@ namespace CSVMergerV3.Application.Domain
     public class InputDataSet : Dataset
     {
         private readonly IFileStreamProvider _fileStreamProvider;
-        public BlockingCollection<string> UnProcessedLines = new BlockingCollection<string>();
-        public BlockingCollection<string> ProcessedLines = new BlockingCollection<string>();
+        public BlockingCollection<string> UnProcessedLines = new BlockingCollection<string>(boundedCapacity: 100000);
+        public BlockingCollection<string> ProcessedLines = new BlockingCollection<string>(boundedCapacity: 200000);
         public List<MapRule> MapRules = new List<MapRule>();
         private static Regex CSVParser = new Regex(",(?=(?:[^\"]*\"[^\"]*\")*(?![^\"]*\"))");
         public int OutputColumnCount = 0;

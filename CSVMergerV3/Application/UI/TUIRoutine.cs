@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -358,9 +359,15 @@ namespace CSVMergerV3.UI
         private void StartJob()
         {
             _log.LogInformation("Job is now starting");
+            var watch = new Stopwatch();
+            watch.Start();
             _lineProducerConsumerOrechestrator.Run();
+            watch.Stop();
+            var time = watch.Elapsed;
+            string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}", time.Hours, time.Minutes, time.Seconds, time.Milliseconds / 10);
             Thread.Sleep(350);
             _log.LogInformation("Jobe Complete!");
+            _log.LogInformation("Completed in {time}", elapsedTime);
             _log.LogInformation("Press enter to exit.");
             Console.ReadLine();
         }

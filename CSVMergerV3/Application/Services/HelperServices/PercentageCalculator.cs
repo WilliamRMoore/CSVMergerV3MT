@@ -60,7 +60,10 @@ namespace CSVMergerV3.Application.Services.HelperServices
 
         private decimal GetPercentage()
         {
+            lock (Batton)
+            {
                 return Math.Floor((ProcessedLines / TotalLines) * 100);
+            }
         }
     }
 }
