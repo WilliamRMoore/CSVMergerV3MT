@@ -38,10 +38,17 @@ A prompt will then show you the configuration for your new set with all of the m
 
 Once accepted, it will prepare the job, and show you the total number of output lines.
 
-The next promp says hit any key to run, but that's a lie. You have to hit enter, I'm going to fix this.
+The next prompt says hit any key to run, but that's a lie. You have to hit enter, I'm going to fix this.
 
 While the job executes you will see a precentage counter for the job as a visualization for it's progress. 
 
 Once done it will tell you how long the job took. 
 
 Your newly made CSV should be in the directory you specified. 
+
+
+# Known Issues
+
+1. The regex used for splitting CSV lines, while robust, isn't perfect. I have encountered files with formatting that will cause the system to crash with an "index out of bounds error". I have only seen this one files that were exported with older version of Excel, though.
+2. The input loop for the column mapping rules has an option to go back, it doesn't work properly, and I probably won't fix it for this version of the project. This will be addressed when I upgrade the project to have a GUI. 
+
